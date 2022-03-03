@@ -7,6 +7,8 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.navigation.fragment.findNavController
+import androidx.navigation.fragment.navArgs
 import com.example.mysubscribers.R
 import com.example.mysubscribers.data.db.AppDatabase
 import com.example.mysubscribers.data.db.dao.SubscriberDAO
@@ -30,8 +32,18 @@ class SubscriberFragment : Fragment(R.layout.subscriber_fragment) {
         }
     }
 
+    private val args: SubscriberFragmentArgs by navArgs()
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        args.subscriber?.let { subscriber ->
+            button_subscriber.text = getString(R.string.subscriber_button_update)
+            input_name.setText(subscriber.name)
+            input_email.setText(subscriber.email)
+
+            button_delete.visibility = View.VISIBLE
+        }
 
         observeEvents()
         setListeners()
@@ -40,10 +52,16 @@ class SubscriberFragment : Fragment(R.layout.subscriber_fragment) {
     private fun observeEvents() {
         viewModel.subscriberStateEventData.observe(viewLifecycleOwner) { subscriberState ->
             when (subscriberState) {
-                is SubscriberViewModel.SubscriberState.Inserted -> {
+                is SubscriberViewModel.SubscriberState.Inserted,
+                is SubscriberViewModel.SubscriberState.Updated,
+                is SubscriberViewModel.SubscriberState.Deleted -> {
                     clearFields()
                     hideKeyboard()
+                    requireView().requestFocus()
+
+                    findNavController().popBackStack()
                 }
+
             }
         }
 
@@ -70,7 +88,11 @@ class SubscriberFragment : Fragment(R.layout.subscriber_fragment) {
             val name = input_name.text.toString()
             val email = input_email.text.toString()
 
-            viewModel.addSubscriber(name, email)
+            viewModel.addOrUpdateSubscriber(name, email, args.subscriber?.id ?: 0)
+        }
+
+        button_delete.setOnClickListener {
+            viewModel.removeSubscriber(args.subscriber?.id ?: 0)
         }
     }
 }

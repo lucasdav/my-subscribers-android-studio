@@ -12,6 +12,7 @@ import com.example.mysubscribers.R
 import com.example.mysubscribers.data.db.AppDatabase
 import com.example.mysubscribers.data.db.dao.SubscriberDAO
 import com.example.mysubscribers.data.db.entity.SubscriberEntity
+import com.example.mysubscribers.extension.navigateWithAnimations
 import com.example.mysubscribers.repository.DatabaseDataSource
 import com.example.mysubscribers.repository.SubscriberRepository
 import com.example.mysubscribers.ui.subscriber.SubscriberViewModel
@@ -39,7 +40,13 @@ class SubscriberListFragment : Fragment(R.layout.subscriber_list_fragment) {
 
     private fun observeViewModelEvents() {
         viewModel.allSubscribersEvent.observe(viewLifecycleOwner) { allSubscribers ->
-            val subscriberListAdapter = SubscriberListAdapter(allSubscribers)
+            val subscriberListAdapter = SubscriberListAdapter(allSubscribers).apply {
+                onItemClick = { subscriber ->
+                    val directions = SubscriberListFragmentDirections
+                        .actionSubscriberListFragmentToSubscriberFragment(subscriber)
+                    findNavController().navigateWithAnimations(directions)
+                }
+            }
 
             with(recycler_subscribers) {
                 setHasFixedSize(true)
@@ -48,9 +55,16 @@ class SubscriberListFragment : Fragment(R.layout.subscriber_list_fragment) {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        viewModel.getSubscribers()
+    }
+
     private fun configureViewListeners() {
         fabAddSubscriber.setOnClickListener{
-            findNavController().navigate(R.id.subscriberFragment)
+            findNavController().navigateWithAnimations(
+                R.id.action_subscriberListFragment_to_subscriberFragment
+            )
         }
     }
 }
